@@ -1,0 +1,63 @@
+# a basic policy file -- defining what data is to be checked, and their severity levels 
+#in theory, the use would define it, but for the sake of this capstone, we will be using this. 
+version: 1
+max_scan_chars: 200000
+
+# Hosts the egress proxy inspects (collector config, not an approval list).
+ai_hosts:
+  - api.openai.com
+  - api.anthropic.com
+  - generativelanguage.googleapis.com
+
+data_classes:
+  - id: ssn
+    tier: structured
+    description: US social security number
+    patterns: ['\b\d{3}-\d{2}-\d{4}\b']
+    validate_with: ssn_valid
+    severity: high
+  - id: credit_card
+    tier: structured
+    description: Payment card number (Luhn-checked)
+    patterns: ['\b(?:\d[ -]?){12,18}\d\b']
+    validate_with: luhn
+    severity: high
+  - id: email
+    tier: structured
+    description: Email address
+    patterns: ['\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b']
+    severity: low
+  - id: aws_access_key
+    tier: credential
+    description: AWS access key id
+    patterns: ['\b(?:AKIA|ASIA)[0-9A-Z]{16}\b']
+    severity: high
+  - id: private_key_block
+    tier: credential
+    description: PEM private key header
+    patterns: ['-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----']
+    severity: high
+
+# First matching rule wins, per data class. The strictest action across the
+# matched classes becomes the decision.
+rules:
+  - id: R1
+    when: {class: [ssn, credit_card, aws_access_key, private_key_block], dest_status: [unapproved, unknown]}
+    action: block
+    finding: SENSITIVE_TO_UNAPPROVED
+  - id: R2
+    when: {class: email, dest_status: [unapproved, unknown]}
+    action: warn
+    finding: PII_TO_UNAPPROVED
+  - id: R3
+    when: {class: [ssn, credit_card], dest_status: approved}
+    action: log
+    finding: SENSITIVE_TO_APPROVED
+    severity: low
+  - id: R4
+    when: {class: [aws_access_key, private_key_block], dest_status: approved}
+    action: alert
+    finding: CREDENTIAL_EXPOSURE
+    severity: high
+
+default_action: log
