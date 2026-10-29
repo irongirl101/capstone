@@ -1,0 +1,22 @@
+[
+  {"id": "ssn_valid", "text": "my ssn is 123-45-6789 thanks", "expect": {"ssn": 1}},
+  {"id": "ssn_two", "text": "123-45-6789 and 234-56-7890", "expect": {"ssn": 2}},
+  {"id": "ssn_bad_area_9xx", "text": "id 987-65-4321", "expect": {}},
+  {"id": "ssn_bad_area_000", "text": "id 000-12-3456", "expect": {}},
+  {"id": "ssn_bad_group", "text": "id 123-00-6789", "expect": {}},
+  {"id": "ssn_bad_serial", "text": "id 123-45-0000", "expect": {}},
+  {"id": "cc_visa_test", "text": "card 4111 1111 1111 1111", "expect": {"credit_card": 1}},
+  {"id": "cc_dashes", "text": "card 4111-1111-1111-1111", "expect": {"credit_card": 1}},
+  {"id": "cc_luhn_fail", "text": "card 4111 1111 1111 1112", "expect": {}},
+  {"id": "order_number", "text": "order 2024-0007-1234 shipped", "expect": {}},
+  {"id": "phone_like", "text": "call +1 415 555 0132 today", "expect": {}},
+  {"id": "email", "text": "mail jane.doe@example.com", "expect": {"email": 1}},
+  {"id": "not_an_email", "text": "version 1.2@3 is out", "expect": {}},
+  {"id": "aws_key", "text": "key AKIAIOSFODNN7EXAMPLE here", "expect": {"aws_access_key": 1}},
+  {"id": "aws_like_short", "text": "AKIA123", "expect": {}},
+  {"id": "pem_header", "text": "-----BEGIN RSA PRIVATE KEY----- abc", "expect": {"private_key_block": 1}},
+  {"id": "public_key_header", "text": "-----BEGIN PUBLIC KEY----- abc", "expect": {}},
+  {"id": "mixed", "text": "ssn 123-45-6789 mail a@b.io", "expect": {"ssn": 1, "email": 1}},
+  {"id": "benign", "text": "Please summarize the quarterly report.", "expect": {}},
+  {"id": "empty", "text": "", "expect": {}}
+]
