@@ -7,8 +7,8 @@ local enforcement and Layer 3 (Check B) uses it for the decision of record.
 from dataclasses import dataclass
 from typing import Iterable, Optional
 
-from aigov.common import ACTION_RANK, SEVERITY_RANK, Action, DestKind, DestStatus, Severity
-from aigov.policy.schema import Policy, When, as_list
+from gov.common import ACTION_RANK, SEVERITY_RANK, Action, DestKind, DestStatus, Severity
+from gov.policy.schema import Policy, When, as_list
 
 
 @dataclass(frozen=True)
