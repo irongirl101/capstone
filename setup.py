@@ -9,5 +9,5 @@ setup(
     packages=find_packages("src"),
     python_requires=">=3.10",
     install_requires=["pydantic>=2.5", "pyyaml>=6"],
-    extras_require={"dev": ["pytest>=8"]},
+    extras_require={"dev": ["pytest>=8"], "proxy": ["mitmproxy>=10"]},
 )
