@@ -35,3 +35,4 @@ class Layer1Event(Strict):
         if any(not value.strip() for value in values):
             raise ValueError("class identifiers must not be blank")
         return values
+ # this could be made a bit stronger, but it works for this review. 
