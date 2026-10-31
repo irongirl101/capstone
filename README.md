@@ -1,39 +1,46 @@
 # capstone
 well figrue this out 
+This repository contains a policy loader, sensitive-data matcher, policy evaluator, and the strict Layer 1 event contract used by simulated collectors.
 
-## What each file does 
-```policy.py``` - The policy, something someone will have to change accd to their circumstance. No logic. 
-- ai_hosts lists the hostnames the egress proxy will inspect.
+## Setup
 
-- data_classes defines what counts as sensitive. Each class has a name, a tier (structured, credential and so on), one or more regex patterns, an optional extra check by name (luhn for card numbers, ssn_valid for SSNs), and a severity.
+The project metadata declares the runtime dependencies (`pydantic` and `pyyaml`) and a development extra containing `pytest`. Install the project and all test dependencies into the active Python environment with:
 
-- rules says what to do when a data class is found, depending on where it’s going. For example, rule R1 says an SSN, card number, AWS key or private key sent to an unapproved or unknown destination should be blocked. R2 warns on emails to unapproved destinations. R3 only logs an SSN or card sent to an approved destination, and R4 raises an alert if a credential goes even to an approved one.
+```bash
+python3 -m pip install -e '.[dev]'
+```
 
-- default_action: log is what happens when no rule matches.
+For an isolated environment, create and activate a virtual environment first:
 
-- max_scan_chars caps how much text gets scanned, as a guard against huge inputs.
+```bash
+python3 -m venv .venv
+source .venv/bin/activate       # macOS/Linux
+python -m pip install -e '.[dev]'
+```
 
-```common.py``` - shared vocab 
-Implements 'Strict' - base model that rejects any field it was not told about. Holds the enums for Action (log, warn, alert, block), Severity, DestStatus (approved, unapproved, unknown) and DestKind (web, api, mcp, agent). Allows for easily comparing severity and strictness 
+## Run the tests
 
-```schema.py``` - the rules for what a valid policy looks like. It turns the YAML into typed Python objects and refuses anything malformed
-- DataClass, When, Rule and Policy are the shapes of each piece of the file. When is a rule’s condition, where every condition given must hold and an omitted one matches anything.
+From the repository root, run the full suite manually with:
 
-- Validation catches typos in key names, regexes that don’t compile, validator names that don’t exist, duplicate IDs, and rules that reference a data class that isn’t defined.
+```bash
+python -m pytest -v
+```
 
-- Bundle is a Policy plus two extra fields, a hash and a snapshot of destination statuses. This is the compiled form collectors will load.
+For a concise result, use:
 
-- uncovered_classes() finds data classes that no rule can ever match, which would silently fall through to the default action.
+```bash
+python -m pytest -q
+```
 
-- KNOWN_VALIDATORS lists the check names the schema accepts. The functions behind them don’t exist yet, and Part 2 adds them.
+The suite covers policy validation, matcher behavior, evaluator decisions and deterministic rule selection, strict `Layer1Event` validation, and simulated matcher → evaluator → event pipelines. It does not require a browser extension, proxy, MCP server, database, or network service.
 
-```loader.py``` - reading and compiling the policy
-- load_policy() reads the YAML file and runs it through the schema.
+## Source layout
 
-- policy_hash() produces a fingerprint of the policy. It sorts the keys before hashing so the same policy always gives the same hash, and the hash covers only the policy fields, not the bundle extras.
-
-- compile_bundle() builds the Bundle that collectors load, adding the hash and a copy of the registry’s destination statuses. The registry stays the source of truth, and the bundle is a derived copy so collectors can enforce offline.
-
-```test_policy.py``` - They check that the shipped policy loads and that every data class is covered by a rule, that a minimal policy is valid, and that eight different kinds of broken policy are rejected.
-
-```pyproject.toml``` - requirements for the project
+- `policy/policy.yaml` — shipped policy defining data classes, rules, destinations, and the default action.
+- `src/gov/common.py` — shared strict model base and enums for actions, severities, destination statuses, and destination kinds.
+- `src/gov/policy/schema.py` — Pydantic schema and validation for policies.
+- `src/gov/policy/loader.py` — YAML loading, hashing, and bundle compilation.
+- `src/gov/policy/match.py` — regex and validator-based scanning that returns counts and class IDs, never matched content.
+- `src/gov/policy/engine.py` — pure policy evaluation with per-class rule tracking and deterministic precedence.
+- `src/gov/contracts.py` — strict, content-free `Layer1Event` contract for collector metadata and the selected action.
+- `tests/` — unit and simulated integration tests.
